@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Flight Tracker</title>
+   <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+   <div class="container">
+       <h1>Flight Tracker</h1>
+       
+       <div class="tabs">
+           <button class="tab-btn active" data-tab="add-flight">Add Flight</button>
+           <button class="tab-btn" data-tab="analysis">Analysis</button>
+           <button class="tab-btn" data-tab="raw-data">Raw Data</button>
+       </div>
+
+       <div id="add-flight" class="tab-content active">
+           <form id="flight-form">
+               <div class="form-group">
+                   <label>Type *</label>
+                   <div class="button-group">
+                       <button type="button" class="toggle-btn" data-field="type" data-value="Work">Work</button>
+                       <button type="button" class="toggle-btn" data-field="type" data-value="Personal">Personal</button>
+                   </div>
+               </div>
+
+               <div class="form-group">
+                   <label for="depart-airport">Depart Airport Code *</label>
+                   <input type="text" id="depart-airport" placeholder="Search airport..." autocomplete="off" required>
+                   <div id="depart-suggestions" class="suggestions"></div>
+               </div>
+
+               <div class="form-group">
+                   <label for="arrival-airport">Arrival Airport Code *</label>
+                   <input type="text" id="arrival-airport" placeholder="Search airport..." autocomplete="off" required>
+                   <div id="arrival-suggestions" class="suggestions"></div>
+               </div>
+
+               <div class="form-group">
+                   <label for="date-traveled">Date Traveled *</label>
+                   <input type="date" id="date-traveled" required>
+               </div>
+
+               <div class="form-group">
+                   <label>Trip Type *</label>
+                   <div class="button-group">
+                       <button type="button" class="toggle-btn" data-field="trip-type" data-value="One Way">One Way</button>
+                       <button type="button" class="toggle-btn" data-field="trip-type" data-value="Round Trip">Round Trip</button>
+                   </div>
+               </div>
+
+               <div class="form-group">
+                   <label for="airline">Airline *</label>
+                   <input type="text" id="airline" placeholder="e.g., Delta, United" required>
+               </div>
+
+               <div class="form-group">
+                   <label for="description">Description *</label>
+                   <input type="text" id="description" placeholder="Brief description" required>
+               </div>
+
+               <button type="submit" class="submit-btn">Add Flight</button>
+               <div id="form-error" class="error-message"></div>
+           </form>
+       </div>
+
+       <div id="analysis" class="tab-content">
+           <div class="analysis-section">
+               <h2>Lifetime Totals</h2>
+               <table class="stats-table">
+                   <tr><td>Flights Taken</td><td id="stat-flights">0</td></tr>
+                   <tr><td>Total Miles Flown</td><td id="stat-miles">0</td></tr>
+                   <tr><td>Total Hours Flown</td><td id="stat-hours">0</td></tr>
+                   <tr><td>Routes Taken</td><td id="stat-routes">0</td></tr>
+                   <tr><td>Miles per Flight</td><td id="stat-miles-per-flight">0</td></tr>
+                   <tr><td>Hours per Flight</td><td id="stat-hours-per-flight">0</td></tr>
+                   <tr><td># of Earths Traveled</td><td id="stat-earths">0</td></tr>
+                   <tr><td>Longest Flight</td><td id="stat-longest">-</td></tr>
+                   <tr><td>Shortest Flight</td><td id="stat-shortest">-</td></tr>
+               </table>
+               <p class="note">* Hours calculated: (Distance ÷ 500 mph) + 0.5 hour buffer for taxi/takeoff/landing</p>
+           </div>
+
+           <div class="analysis-section">
+               <h2>Yearly Travel</h2>
+               <table class="stats-table" id="yearly-table">
+                   <thead>
+                       <tr><th>Year</th><th>Flights</th><th>Miles</th><th>Hours</th></tr>
+                   </thead>
+                   <tbody></tbody>
+               </table>
+           </div>
+
+           <div class="analysis-section">
+               <h2>Work/Personal Split</h2>
+               <table class="stats-table" id="type-table">
+                   <thead>
+                       <tr><th>Type</th><th>Flights</th><th>Miles</th><th>Hours</th></tr>
+                   </thead>
+                   <tbody></tbody>
+               </table>
+           </div>
+
+           <div class="analysis-section">
+               <h2>Routes</h2>
+               <table class="stats-table" id="route-table">
+                   <thead>
+                       <tr><th>Route</th><th>Flights</th><th>Miles</th><th>Hours</th></tr>
+                   </thead>
+                   <tbody></tbody>
+               </table>
+           </div>
+       </div>
+
+       <div id="raw-data" class="tab-content">
+           <div class="search-box">
+               <input type="text" id="search-filter" placeholder="Search flights...">
+           </div>
+           <table class="data-table" id="flights-table">
+               <thead>
+                   <tr>
+                       <th>Date</th>
+                       <th>Route</th>
+                       <th>Miles</th>
+                       <th>Hours</th>
+                       <th>Type</th>
+                       <th>Airline</th>
+                       <th>Description</th>
+                       <th>Actions</th>
+                   </tr>
+               </thead>
+               <tbody></tbody>
+           </table>
+       </div>
+   </div>
+
+   <div id="edit-modal" class="modal">
+       <div class="modal-content">
+           <h2>Edit Flight</h2>
+           <form id="edit-form">
+               <input type="hidden" id="edit-id">
+               
+               <div class="form-group">
+                   <label>Type *</label>
+                   <div class="button-group">
+                       <button type="button" class="toggle-btn" data-field="edit-type" data-value="Work">Work</button>
+                       <button type="button" class="toggle-btn" data-field="edit-type" data-value="Personal">Personal</button>
+                   </div>
+               </div>
+
+               <div class="form-group">
+                   <label for="edit-depart">Depart Airport Code *</label>
+                   <input type="text" id="edit-depart" required>
+               </div>
+
+               <div class="form-group">
+                   <label for="edit-arrival">Arrival Airport Code *</label>
+                   <input type="text" id="edit-arrival" required>
+               </div>
+
+               <div class="form-group">
+                   <label for="edit-date">Date Traveled *</label>
+                   <input type="date" id="edit-date" required>
+               </div>
+
+               <div class="form-group">
+                   <label for="edit-airline">Airline *</label>
+                   <input type="text" id="edit-airline" required>
+               </div>
+
+               <div class="form-group">
+                   <label for="edit-description">Description *</label>
+                   <input type="text" id="edit-description" required>
+               </div>
+
+               <div class="modal-actions">
+                   <button type="submit" class="submit-btn">Save</button>
+                   <button type="button" class="cancel-btn" onclick="closeEditModal()">Cancel</button>
+               </div>
+           </form>
+       </div>
+   </div>
+
+   <script type="module" src="app.js"></script>
+</body>
+</html>
