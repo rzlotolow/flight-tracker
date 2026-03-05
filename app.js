@@ -3,12 +3,12 @@ import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from
 import { getFirestore, collection, addDoc, query, where, getDocs, updateDoc, doc, orderBy } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
 const firebaseConfig = {
-   apiKey: "YOUR_API_KEY",
-   authDomain: "YOUR_AUTH_DOMAIN",
-   projectId: "YOUR_PROJECT_ID",
-   storageBucket: "YOUR_STORAGE_BUCKET",
-   messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-   appId: "YOUR_APP_ID"
+   apiKey: "AIzaSyAhov2iADGzgg3yKkVyJLB2DpJCMFRLjU0",
+   authDomain: "flight-tracker-1ee6c.firebaseapp.com",
+   projectId: "flight-tracker-1ee6c",
+   storageBucket: "flight-tracker-1ee6c.firebasestorage.app",
+   messagingSenderId: "411596757145",
+   appId: "1:411596757145:web:4eb45f2a1f365108c9c008"
 };
 
 const app = initializeApp(firebaseConfig);
