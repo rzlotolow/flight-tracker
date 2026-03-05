@@ -131,6 +131,28 @@ function setupToggleButtons() {
            });
            
            btn.classList.add('selected');
+
+           if (field === 'trip-type') {
+               const oneWayGroup = document.getElementById('date-group-oneway');
+               const roundTripGroup = document.getElementById('date-group-roundtrip');
+               const oneWayDate = document.getElementById('date-traveled');
+               const leg1Date = document.getElementById('date-traveled-leg1');
+               const leg2Date = document.getElementById('date-traveled-leg2');
+
+               if (value === 'Round Trip') {
+                   oneWayGroup.style.display = 'none';
+                   roundTripGroup.style.display = 'block';
+                   oneWayDate.removeAttribute('required');
+                   leg1Date.setAttribute('required', 'required');
+                   leg2Date.setAttribute('required', 'required');
+               } else {
+                   oneWayGroup.style.display = 'block';
+                   roundTripGroup.style.display = 'none';
+                   oneWayDate.setAttribute('required', 'required');
+                   leg1Date.removeAttribute('required');
+                   leg2Date.removeAttribute('required');
+               }
+           }
        });
    });
 }
@@ -145,7 +167,6 @@ async function handleFlightSubmit(e) {
    const tripType = document.querySelector('[data-field="trip-type"].selected')?.dataset.value;
    const departInput = document.getElementById('depart-airport');
    const arrivalInput = document.getElementById('arrival-airport');
-   const date = document.getElementById('date-traveled').value;
    const airline = document.getElementById('airline').value;
    const description = document.getElementById('description').value;
 
@@ -169,30 +190,69 @@ async function handleFlightSubmit(e) {
    const distance = haversineDistance(departLat, departLon, arrivalLat, arrivalLon);
    const hours = calculateFlightTime(distance);
 
-   const flightData = {
-       userId: currentUser.uid,
-       type: type,
-       departCode: departCode,
-       arrivalCode: arrivalCode,
-       date: date,
-       airline: airline,
-       description: description,
-       distance: parseFloat(distance.toFixed(2)),
-       hours: parseFloat(hours.toFixed(2)),
-       isDeleted: 'N',
-       createdAt: new Date().toISOString()
-   };
-
    try {
-       await addDoc(collection(db, 'flights'), flightData);
-
        if (tripType === 'Round Trip') {
-           const returnFlight = {
-               ...flightData,
-               departCode: arrivalCode,
-               arrivalCode: departCode
+           const leg1Date = document.getElementById('date-traveled-leg1').value;
+           const leg2Date = document.getElementById('date-traveled-leg2').value;
+
+           if (!leg1Date || !leg2Date) {
+               errorDiv.textContent = 'Please enter both dates for round trip';
+               return;
+           }
+
+           const firstLeg = {
+               userId: currentUser.uid,
+               type: type,
+               departCode: departCode,
+               arrivalCode: arrivalCode,
+               date: leg1Date,
+               airline: airline,
+               description: description,
+               distance: parseFloat(distance.toFixed(2)),
+               hours: parseFloat(hours.toFixed(2)),
+               isDeleted: 'N',
+               createdAt: new Date().toISOString()
            };
-           await addDoc(collection(db, 'flights'), returnFlight);
+
+           const secondLeg = {
+               userId: currentUser.uid,
+               type: type,
+               departCode: arrivalCode,
+               arrivalCode: departCode,
+               date: leg2Date,
+               airline: airline,
+               description: description,
+               distance: parseFloat(distance.toFixed(2)),
+               hours: parseFloat(hours.toFixed(2)),
+               isDeleted: 'N',
+               createdAt: new Date().toISOString()
+           };
+
+           await addDoc(collection(db, 'flights'), firstLeg);
+           await addDoc(collection(db, 'flights'), secondLeg);
+       } else {
+           const date = document.getElementById('date-traveled').value;
+
+           if (!date) {
+               errorDiv.textContent = 'Please enter a date';
+               return;
+           }
+
+           const flightData = {
+               userId: currentUser.uid,
+               type: type,
+               departCode: departCode,
+               arrivalCode: arrivalCode,
+               date: date,
+               airline: airline,
+               description: description,
+               distance: parseFloat(distance.toFixed(2)),
+               hours: parseFloat(hours.toFixed(2)),
+               isDeleted: 'N',
+               createdAt: new Date().toISOString()
+           };
+
+           await addDoc(collection(db, 'flights'), flightData);
        }
 
        document.getElementById('flight-form').reset();
@@ -203,6 +263,8 @@ async function handleFlightSubmit(e) {
        arrivalInput.removeAttribute('data-code');
        arrivalInput.removeAttribute('data-lat');
        arrivalInput.removeAttribute('data-lon');
+       document.getElementById('date-group-oneway').style.display = 'block';
+       document.getElementById('date-group-roundtrip').style.display = 'none';
 
        alert('Flight(s) added successfully!');
        await loadFlights();
@@ -494,10 +556,4 @@ async function init() {
    setupAutocomplete('arrival-airport', 'arrival-suggestions');
    setupSearch();
    
-   document.getElementById('flight-form').addEventListener('submit', handleFlightSubmit);
-   document.getElementById('edit-form').addEventListener('submit', handleEditSubmit);
-   
-   await handleAuth();
-}
-
-init();
+   document.
