@@ -27,6 +27,27 @@
                </div>
 
                <div class="form-group">
+                   <label>Trip Type *</label>
+                   <div class="button-group">
+                       <button type="button" class="toggle-btn" data-field="trip-type" data-value="One Way">One Way</button>
+                       <button type="button" class="toggle-btn" data-field="trip-type" data-value="Round Trip">Round Trip</button>
+                   </div>
+               </div>
+
+               <div class="form-group" id="date-group-oneway">
+                   <label for="date-traveled">Date Traveled *</label>
+                   <input type="date" id="date-traveled" required>
+               </div>
+
+               <div class="form-group" id="date-group-roundtrip" style="display: none;">
+                   <label for="date-traveled-leg1">Date Traveled - First Leg *</label>
+                   <input type="date" id="date-traveled-leg1">
+                   
+                   <label for="date-traveled-leg2" style="margin-top: 10px;">Date Traveled - Second Leg *</label>
+                   <input type="date" id="date-traveled-leg2">
+               </div>
+
+               <div class="form-group">
                    <label for="depart-airport">Depart Airport Code *</label>
                    <input type="text" id="depart-airport" placeholder="Search airport..." autocomplete="off" required>
                    <div id="depart-suggestions" class="suggestions"></div>
@@ -36,19 +57,6 @@
                    <label for="arrival-airport">Arrival Airport Code *</label>
                    <input type="text" id="arrival-airport" placeholder="Search airport..." autocomplete="off" required>
                    <div id="arrival-suggestions" class="suggestions"></div>
-               </div>
-
-               <div class="form-group">
-                   <label for="date-traveled">Date Traveled *</label>
-                   <input type="date" id="date-traveled" required>
-               </div>
-
-               <div class="form-group">
-                   <label>Trip Type *</label>
-                   <div class="button-group">
-                       <button type="button" class="toggle-btn" data-field="trip-type" data-value="One Way">One Way</button>
-                       <button type="button" class="toggle-btn" data-field="trip-type" data-value="Round Trip">Round Trip</button>
-                   </div>
                </div>
 
                <div class="form-group">
