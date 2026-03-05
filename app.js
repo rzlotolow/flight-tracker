@@ -370,3 +370,134 @@ window.deleteFlight = async function(flightId) {
        updateAnalysis();
    } catch (error) {
        alert('Error deleting flight: ' + error.message);
+   }
+};
+
+function updateAnalysis() {
+   const totalFlights = allFlights.length;
+   const totalMiles = allFlights.reduce((sum, f) => sum + f.distance, 0);
+   const totalHours = allFlights.reduce((sum, f) => sum + f.hours, 0);
+   
+   const routes = new Set(allFlights.map(f => `${f.departCode} → ${f.arrivalCode}`));
+   
+   document.getElementById('stat-flights').textContent = totalFlights;
+   document.getElementById('stat-miles').textContent = totalMiles.toFixed(2);
+   document.getElementById('stat-hours').textContent = totalHours.toFixed(2);
+   document.getElementById('stat-routes').textContent = routes.size;
+   document.getElementById('stat-miles-per-flight').textContent = totalFlights > 0 ? (totalMiles / totalFlights).toFixed(2) : '0.00';
+   document.getElementById('stat-hours-per-flight').textContent = totalFlights > 0 ? (totalHours / totalFlights).toFixed(2) : '0.00';
+   document.getElementById('stat-earths').textContent = (totalMiles / 24880).toFixed(2);
+
+   if (allFlights.length > 0) {
+       const longest = allFlights.reduce((max, f) => f.distance > max.distance ? f : max);
+       const shortest = allFlights.reduce((min, f) => f.distance < min.distance ? f : min);
+       document.getElementById('stat-longest').textContent = `${longest.departCode} → ${longest.arrivalCode} (${longest.distance.toFixed(2)} mi)`;
+       document.getElementById('stat-shortest').textContent = `${shortest.departCode} → ${shortest.arrivalCode} (${shortest.distance.toFixed(2)} mi)`;
+   }
+
+   const yearlyData = {};
+   allFlights.forEach(flight => {
+       const year = new Date(flight.date).getFullYear();
+       if (!yearlyData[year]) {
+           yearlyData[year] = { flights: 0, miles: 0, hours: 0 };
+       }
+       yearlyData[year].flights++;
+       yearlyData[year].miles += flight.distance;
+       yearlyData[year].hours += flight.hours;
+   });
+
+   const yearlyTbody = document.querySelector('#yearly-table tbody');
+   yearlyTbody.innerHTML = '';
+   Object.keys(yearlyData).sort().reverse().forEach(year => {
+       const data = yearlyData[year];
+       const row = `<tr>
+           <td>${year}</td>
+           <td>${data.flights}</td>
+           <td>${data.miles.toFixed(2)}</td>
+           <td>${data.hours.toFixed(2)}</td>
+       </tr>`;
+       yearlyTbody.innerHTML += row;
+   });
+
+   const typeData = {};
+   allFlights.forEach(flight => {
+       if (!typeData[flight.type]) {
+           typeData[flight.type] = { flights: 0, miles: 0, hours: 0 };
+       }
+       typeData[flight.type].flights++;
+       typeData[flight.type].miles += flight.distance;
+       typeData[flight.type].hours += flight.hours;
+   });
+
+   const typeTbody = document.querySelector('#type-table tbody');
+   typeTbody.innerHTML = '';
+   Object.keys(typeData).forEach(type => {
+       const data = typeData[type];
+       const row = `<tr>
+           <td>${type}</td>
+           <td>${data.flights}</td>
+           <td>${data.miles.toFixed(2)}</td>
+           <td>${data.hours.toFixed(2)}</td>
+       </tr>`;
+       typeTbody.innerHTML += row;
+   });
+
+   const routeData = {};
+   allFlights.forEach(flight => {
+       const route = `${flight.departCode} → ${flight.arrivalCode}`;
+       if (!routeData[route]) {
+           routeData[route] = { flights: 0, miles: 0, hours: 0 };
+       }
+       routeData[route].flights++;
+       routeData[route].miles += flight.distance;
+       routeData[route].hours += flight.hours;
+   });
+
+   const routeTbody = document.querySelector('#route-table tbody');
+   routeTbody.innerHTML = '';
+   Object.entries(routeData)
+       .sort((a, b) => b[1].flights - a[1].flights)
+       .forEach(([route, data]) => {
+           const row = `<tr>
+               <td>${route}</td>
+               <td>${data.flights}</td>
+               <td>${data.miles.toFixed(2)}</td>
+               <td>${data.hours.toFixed(2)}</td>
+           </tr>`;
+           routeTbody.innerHTML += row;
+       });
+}
+
+async function handleAuth() {
+   onAuthStateChanged(auth, async (user) => {
+       if (user) {
+           currentUser = user;
+           document.querySelector('.container').style.display = 'block';
+           await loadFlights();
+           displayFlights();
+       } else {
+           const provider = new GoogleAuthProvider();
+           try {
+               await signInWithPopup(auth, provider);
+           } catch (error) {
+               console.error('Auth error:', error);
+           }
+       }
+   });
+}
+
+async function init() {
+   await loadAirportData();
+   setupTabs();
+   setupToggleButtons();
+   setupAutocomplete('depart-airport', 'depart-suggestions');
+   setupAutocomplete('arrival-airport', 'arrival-suggestions');
+   setupSearch();
+   
+   document.getElementById('flight-form').addEventListener('submit', handleFlightSubmit);
+   document.getElementById('edit-form').addEventListener('submit', handleEditSubmit);
+   
+   await handleAuth();
+}
+
+init();
