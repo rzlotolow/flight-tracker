@@ -1,5 +1,5 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+import { getAuth, signInWithPopup, signOut, GoogleAuthProvider, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 import { getFirestore, collection, addDoc, query, where, getDocs, updateDoc, doc, orderBy } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -160,6 +160,11 @@ function setupToggleButtons() {
 async function handleFlightSubmit(e) {
    e.preventDefault();
    
+   if (!currentUser) {
+       alert('You must be signed in to add flights');
+       return;
+   }
+   
    const errorDiv = document.getElementById('form-error');
    errorDiv.textContent = '';
 
@@ -268,6 +273,8 @@ async function handleFlightSubmit(e) {
 
        alert('Flight(s) added successfully!');
        await loadFlights();
+       displayFlights();
+       updateAnalysis();
    } catch (error) {
        errorDiv.textContent = 'Error adding flight: ' + error.message;
    }
@@ -297,7 +304,7 @@ function displayFlights(filteredFlights = null) {
 
    flights.forEach(flight => {
        const row = document.createElement('tr');
-       const dateObj = new Date(flight.date);
+       const dateObj = new Date(flight.date + 'T00:00:00');
        const formattedDate = `${(dateObj.getMonth() + 1).toString().padStart(2, '0')}/${dateObj.getDate().toString().padStart(2, '0')}/${dateObj.getFullYear().toString().slice(-2)}`;
        
        row.innerHTML = `
@@ -328,7 +335,7 @@ function setupSearch() {
        }
 
        const filtered = allFlights.filter(flight => {
-           const dateObj = new Date(flight.date);
+           const dateObj = new Date(flight.date + 'T00:00:00');
            const formattedDate = `${(dateObj.getMonth() + 1).toString().padStart(2, '0')}/${dateObj.getDate().toString().padStart(2, '0')}/${dateObj.getFullYear().toString().slice(-2)}`;
            
            return formattedDate.includes(term) ||
@@ -459,7 +466,7 @@ function updateAnalysis() {
 
    const yearlyData = {};
    allFlights.forEach(flight => {
-       const year = new Date(flight.date).getFullYear();
+       const year = new Date(flight.date + 'T00:00:00').getFullYear();
        if (!yearlyData[year]) {
            yearlyData[year] = { flights: 0, miles: 0, hours: 0 };
        }
@@ -534,16 +541,16 @@ async function handleAuth() {
    onAuthStateChanged(auth, async (user) => {
        if (user) {
            currentUser = user;
+           document.getElementById('auth-container').style.display = 'none';
            document.querySelector('.container').style.display = 'block';
+           document.getElementById('user-email').textContent = user.email;
            await loadFlights();
            displayFlights();
+           updateAnalysis();
        } else {
-           const provider = new GoogleAuthProvider();
-           try {
-               await signInWithPopup(auth, provider);
-           } catch (error) {
-               console.error('Auth error:', error);
-           }
+           currentUser = null;
+           document.getElementById('auth-container').style.display = 'flex';
+           document.querySelector('.container').style.display = 'none';
        }
    });
 }
@@ -558,6 +565,25 @@ async function init() {
    
    document.getElementById('flight-form').addEventListener('submit', handleFlightSubmit);
    document.getElementById('edit-form').addEventListener('submit', handleEditSubmit);
+   
+   document.getElementById('sign-in-btn').addEventListener('click', async () => {
+       const provider = new GoogleAuthProvider();
+       try {
+           await signInWithPopup(auth, provider);
+       } catch (error) {
+           console.error('Sign in error:', error);
+           alert('Error signing in: ' + error.message);
+       }
+   });
+   
+   document.getElementById('sign-out-btn').addEventListener('click', async () => {
+       try {
+           await signOut(auth);
+       } catch (error) {
+           console.error('Sign out error:', error);
+           alert('Error signing out: ' + error.message);
+       }
+   });
    
    await handleAuth();
 }
