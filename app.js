@@ -556,4 +556,10 @@ async function init() {
    setupAutocomplete('arrival-airport', 'arrival-suggestions');
    setupSearch();
    
-   document.
+   document.getElementById('flight-form').addEventListener('submit', handleFlightSubmit);
+   document.getElementById('edit-form').addEventListener('submit', handleEditSubmit);
+   
+   await handleAuth();
+}
+
+init();
