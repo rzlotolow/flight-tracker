@@ -7,8 +7,22 @@
    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-   <div class="container">
-       <h1>Flight Tracker</h1>
+   <div id="auth-container" style="display: none;">
+       <div class="auth-box">
+           <h1>Flight Tracker</h1>
+           <p>Please sign in to continue</p>
+           <button id="sign-in-btn" class="submit-btn">Sign in with Google</button>
+       </div>
+   </div>
+
+   <div class="container" style="display: none;">
+       <div class="header">
+           <h1>Flight Tracker</h1>
+           <div class="user-info">
+               <span id="user-email"></span>
+               <button id="sign-out-btn" class="sign-out-btn">Sign Out</button>
+           </div>
+       </div>
        
        <div class="tabs">
            <button class="tab-btn active" data-tab="add-flight">Add Flight</button>
