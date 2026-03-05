@@ -21,30 +21,37 @@ let airportData = [];
 
 const AIRPORTS_URL = 'https://raw.githubusercontent.com/mwgg/Airports/master/airports.json';
 
+function formatNumber(num) {
+   return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 async function loadAirportData() {
    try {
        const response = await fetch(AIRPORTS_URL);
        const data = await response.json();
        airportData = Object.entries(data).map(([code, info]) => ({
            code: code,
-           name: info.name,
-           city: info.city,
-           country: info.country,
-           lat: info.lat,
-           lon: info.lon
-       }));
+           name: info.name || '',
+           city: info.city || '',
+           country: info.country || '',
+           lat: parseFloat(info.lat) || 0,
+           lon: parseFloat(info.lon) || 0
+       })).filter(airport => airport.lat !== 0 && airport.lon !== 0);
    } catch (error) {
        console.error('Error loading airport data:', error);
    }
 }
 
 function searchAirports(searchTerm) {
+   if (!searchTerm || searchTerm.length < 2) return [];
+   
    const term = searchTerm.toUpperCase();
-   return airportData.filter(airport => 
-       airport.code.includes(term) || 
-       airport.name.toUpperCase().includes(term) ||
-       airport.city.toUpperCase().includes(term)
-   ).slice(0, 10);
+   return airportData.filter(airport => {
+       const codeMatch = airport.code && airport.code.toUpperCase().includes(term);
+       const nameMatch = airport.name && airport.name.toUpperCase().includes(term);
+       const cityMatch = airport.city && airport.city.toUpperCase().includes(term);
+       return codeMatch || nameMatch || cityMatch;
+   }).slice(0, 15);
 }
 
 function setupAutocomplete(inputId, suggestionsId) {
@@ -58,6 +65,16 @@ function setupAutocomplete(inputId, suggestionsId) {
        if (value.length < 2) return;
 
        const results = searchAirports(value);
+       
+       if (results.length === 0) {
+           const div = document.createElement('div');
+           div.className = 'suggestion-item';
+           div.textContent = 'No airports found';
+           div.style.color = '#999';
+           suggestions.appendChild(div);
+           return;
+       }
+
        results.forEach(airport => {
            const div = document.createElement('div');
            div.className = 'suggestion-item';
@@ -310,8 +327,8 @@ function displayFlights(filteredFlights = null) {
        row.innerHTML = `
            <td>${formattedDate}</td>
            <td>${flight.departCode} → ${flight.arrivalCode}</td>
-           <td>${flight.distance.toFixed(2)}</td>
-           <td>${flight.hours.toFixed(2)}</td>
+           <td>${formatNumber(flight.distance)}</td>
+           <td>${formatNumber(flight.hours)}</td>
            <td>${flight.type}</td>
            <td>${flight.airline}</td>
            <td>${flight.description}</td>
@@ -449,19 +466,19 @@ function updateAnalysis() {
    
    const routes = new Set(allFlights.map(f => `${f.departCode} → ${f.arrivalCode}`));
    
-   document.getElementById('stat-flights').textContent = totalFlights;
-   document.getElementById('stat-miles').textContent = totalMiles.toFixed(2);
-   document.getElementById('stat-hours').textContent = totalHours.toFixed(2);
-   document.getElementById('stat-routes').textContent = routes.size;
-   document.getElementById('stat-miles-per-flight').textContent = totalFlights > 0 ? (totalMiles / totalFlights).toFixed(2) : '0.00';
-   document.getElementById('stat-hours-per-flight').textContent = totalFlights > 0 ? (totalHours / totalFlights).toFixed(2) : '0.00';
-   document.getElementById('stat-earths').textContent = (totalMiles / 24880).toFixed(2);
+   document.getElementById('stat-flights').textContent = totalFlights.toLocaleString();
+   document.getElementById('stat-miles').textContent = formatNumber(totalMiles);
+   document.getElementById('stat-hours').textContent = formatNumber(totalHours);
+   document.getElementById('stat-routes').textContent = routes.size.toLocaleString();
+   document.getElementById('stat-miles-per-flight').textContent = totalFlights > 0 ? formatNumber(totalMiles / totalFlights) : '0.00';
+   document.getElementById('stat-hours-per-flight').textContent = totalFlights > 0 ? formatNumber(totalHours / totalFlights) : '0.00';
+   document.getElementById('stat-earths').textContent = formatNumber(totalMiles / 24880);
 
    if (allFlights.length > 0) {
        const longest = allFlights.reduce((max, f) => f.distance > max.distance ? f : max);
        const shortest = allFlights.reduce((min, f) => f.distance < min.distance ? f : min);
-       document.getElementById('stat-longest').textContent = `${longest.departCode} → ${longest.arrivalCode} (${longest.distance.toFixed(2)} mi)`;
-       document.getElementById('stat-shortest').textContent = `${shortest.departCode} → ${shortest.arrivalCode} (${shortest.distance.toFixed(2)} mi)`;
+       document.getElementById('stat-longest').textContent = `${longest.departCode} → ${longest.arrivalCode} (${formatNumber(longest.distance)} mi)`;
+       document.getElementById('stat-shortest').textContent = `${shortest.departCode} → ${shortest.arrivalCode} (${formatNumber(shortest.distance)} mi)`;
    }
 
    const yearlyData = {};
@@ -481,9 +498,9 @@ function updateAnalysis() {
        const data = yearlyData[year];
        const row = `<tr>
            <td>${year}</td>
-           <td>${data.flights}</td>
-           <td>${data.miles.toFixed(2)}</td>
-           <td>${data.hours.toFixed(2)}</td>
+           <td>${data.flights.toLocaleString()}</td>
+           <td>${formatNumber(data.miles)}</td>
+           <td>${formatNumber(data.hours)}</td>
        </tr>`;
        yearlyTbody.innerHTML += row;
    });
@@ -504,9 +521,9 @@ function updateAnalysis() {
        const data = typeData[type];
        const row = `<tr>
            <td>${type}</td>
-           <td>${data.flights}</td>
-           <td>${data.miles.toFixed(2)}</td>
-           <td>${data.hours.toFixed(2)}</td>
+           <td>${data.flights.toLocaleString()}</td>
+           <td>${formatNumber(data.miles)}</td>
+           <td>${formatNumber(data.hours)}</td>
        </tr>`;
        typeTbody.innerHTML += row;
    });
@@ -529,9 +546,9 @@ function updateAnalysis() {
        .forEach(([route, data]) => {
            const row = `<tr>
                <td>${route}</td>
-               <td>${data.flights}</td>
-               <td>${data.miles.toFixed(2)}</td>
-               <td>${data.hours.toFixed(2)}</td>
+               <td>${data.flights.toLocaleString()}</td>
+               <td>${formatNumber(data.miles)}</td>
+               <td>${formatNumber(data.hours)}</td>
            </tr>`;
            routeTbody.innerHTML += row;
        });
