@@ -46,7 +46,6 @@ async function loadAirportData() {
 
 function searchAirports(searchTerm) {
    if (!searchTerm || searchTerm.length < 2) return [];
-   
    const term = searchTerm.toUpperCase();
    return airportData.filter(airport => {
        const codeMatch = airport.code && airport.code.toUpperCase().includes(term);
@@ -63,11 +62,9 @@ function setupAutocomplete(inputId, suggestionsId) {
    input.addEventListener('input', (e) => {
        const value = e.target.value;
        suggestions.innerHTML = '';
-
        if (value.length < 2) return;
 
        const results = searchAirports(value);
-       
        if (results.length === 0) {
            const div = document.createElement('div');
            div.className = 'suggestion-item';
@@ -93,9 +90,7 @@ function setupAutocomplete(inputId, suggestionsId) {
    });
 
    document.addEventListener('click', (e) => {
-       if (e.target !== input) {
-           suggestions.innerHTML = '';
-       }
+       if (e.target !== input) suggestions.innerHTML = '';
    });
 }
 
@@ -112,53 +107,35 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
 
 function calculateFlightTime(distance) {
    let speed;
-   if (distance < 500) {
-       speed = 350;
-   } else if (distance < 1500) {
-       speed = 450;
-   } else if (distance < 3000) {
-       speed = 500;
-   } else {
-       speed = 525;
-   }
+   if (distance < 500) speed = 350;
+   else if (distance < 1500) speed = 450;
+   else if (distance < 3000) speed = 500;
+   else speed = 525;
    return (distance / speed) + 0.5;
 }
 
 function setupTabs() {
    const tabBtns = document.querySelectorAll('.tab-btn');
    const tabContents = document.querySelectorAll('.tab-content');
-
    tabBtns.forEach(btn => {
        btn.addEventListener('click', () => {
            const tabName = btn.dataset.tab;
-           
            tabBtns.forEach(b => b.classList.remove('active'));
            tabContents.forEach(c => c.classList.remove('active'));
-           
            btn.classList.add('active');
            document.getElementById(tabName).classList.add('active');
-
-           if (tabName === 'analysis') {
-               updateAnalysis();
-           } else if (tabName === 'raw-data') {
-               displayFlights();
-           }
+           if (tabName === 'analysis') updateAnalysis();
+           else if (tabName === 'raw-data') displayFlights();
        });
    });
 }
 
 function setupToggleButtons() {
-   const toggleBtns = document.querySelectorAll('.toggle-btn');
-   
-   toggleBtns.forEach(btn => {
+   document.querySelectorAll('.toggle-btn').forEach(btn => {
        btn.addEventListener('click', () => {
            const field = btn.dataset.field;
            const value = btn.dataset.value;
-           
-           document.querySelectorAll(`[data-field="${field}"]`).forEach(b => {
-               b.classList.remove('selected');
-           });
-           
+           document.querySelectorAll(`[data-field="${field}"]`).forEach(b => b.classList.remove('selected'));
            btn.classList.add('selected');
 
            if (field === 'trip-type') {
@@ -188,11 +165,7 @@ function setupToggleButtons() {
 
 async function handleFlightSubmit(e) {
    e.preventDefault();
-   
-   if (!currentUser) {
-       alert('You must be signed in to add flights');
-       return;
-   }
+   if (!currentUser) { alert('You must be signed in to add flights'); return; }
    
    const errorDiv = document.getElementById('form-error');
    errorDiv.textContent = '';
@@ -204,99 +177,33 @@ async function handleFlightSubmit(e) {
    const airline = document.getElementById('airline').value;
    const description = document.getElementById('description').value;
 
-   if (!type || !tripType) {
-       errorDiv.textContent = 'Please select all required options';
-       return;
-   }
-
-   if (!departInput.dataset.code || !arrivalInput.dataset.code) {
-       errorDiv.textContent = 'Please select valid airports from the suggestions';
-       return;
-   }
+   if (!type || !tripType) { errorDiv.textContent = 'Please select all required options'; return; }
+   if (!departInput.dataset.code || !arrivalInput.dataset.code) { errorDiv.textContent = 'Please select valid airports from the suggestions'; return; }
 
    const departCode = departInput.dataset.code;
    const arrivalCode = arrivalInput.dataset.code;
-   const departLat = parseFloat(departInput.dataset.lat);
-   const departLon = parseFloat(departInput.dataset.lon);
-   const arrivalLat = parseFloat(arrivalInput.dataset.lat);
-   const arrivalLon = parseFloat(arrivalInput.dataset.lon);
-
-   const distance = haversineDistance(departLat, departLon, arrivalLat, arrivalLon);
+   const distance = haversineDistance(parseFloat(departInput.dataset.lat), parseFloat(departInput.dataset.lon), parseFloat(arrivalInput.dataset.lat), parseFloat(arrivalInput.dataset.lon));
    const hours = calculateFlightTime(distance);
 
    try {
        if (tripType === 'Round Trip') {
            const leg1Date = document.getElementById('date-traveled-leg1').value;
            const leg2Date = document.getElementById('date-traveled-leg2').value;
+           if (!leg1Date || !leg2Date) { errorDiv.textContent = 'Please enter both dates for round trip'; return; }
 
-           if (!leg1Date || !leg2Date) {
-               errorDiv.textContent = 'Please enter both dates for round trip';
-               return;
-           }
-
-           const firstLeg = {
-               userId: currentUser.uid,
-               type: type,
-               departCode: departCode,
-               arrivalCode: arrivalCode,
-               date: leg1Date,
-               airline: airline,
-               description: description,
-               distance: parseFloat(distance.toFixed(2)),
-               hours: parseFloat(hours.toFixed(2)),
-               isDeleted: 'N',
-               createdAt: new Date().toISOString()
-           };
-
-           const secondLeg = {
-               userId: currentUser.uid,
-               type: type,
-               departCode: arrivalCode,
-               arrivalCode: departCode,
-               date: leg2Date,
-               airline: airline,
-               description: description,
-               distance: parseFloat(distance.toFixed(2)),
-               hours: parseFloat(hours.toFixed(2)),
-               isDeleted: 'N',
-               createdAt: new Date().toISOString()
-           };
-
-           await addDoc(collection(db, 'flights'), firstLeg);
-           await addDoc(collection(db, 'flights'), secondLeg);
+           const base = { userId: currentUser.uid, type, airline, description, distance: parseFloat(distance.toFixed(2)), hours: parseFloat(hours.toFixed(2)), isDeleted: 'N', createdAt: new Date().toISOString() };
+           await addDoc(collection(db, 'flights'), { ...base, departCode, arrivalCode, date: leg1Date });
+           await addDoc(collection(db, 'flights'), { ...base, departCode: arrivalCode, arrivalCode: departCode, date: leg2Date });
        } else {
            const date = document.getElementById('date-traveled').value;
-
-           if (!date) {
-               errorDiv.textContent = 'Please enter a date';
-               return;
-           }
-
-           const flightData = {
-               userId: currentUser.uid,
-               type: type,
-               departCode: departCode,
-               arrivalCode: arrivalCode,
-               date: date,
-               airline: airline,
-               description: description,
-               distance: parseFloat(distance.toFixed(2)),
-               hours: parseFloat(hours.toFixed(2)),
-               isDeleted: 'N',
-               createdAt: new Date().toISOString()
-           };
-
-           await addDoc(collection(db, 'flights'), flightData);
+           if (!date) { errorDiv.textContent = 'Please enter a date'; return; }
+           await addDoc(collection(db, 'flights'), { userId: currentUser.uid, type, departCode, arrivalCode, date, airline, description, distance: parseFloat(distance.toFixed(2)), hours: parseFloat(hours.toFixed(2)), isDeleted: 'N', createdAt: new Date().toISOString() });
        }
 
        document.getElementById('flight-form').reset();
        document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('selected'));
-       departInput.removeAttribute('data-code');
-       departInput.removeAttribute('data-lat');
-       departInput.removeAttribute('data-lon');
-       arrivalInput.removeAttribute('data-code');
-       arrivalInput.removeAttribute('data-lat');
-       arrivalInput.removeAttribute('data-lon');
+       departInput.removeAttribute('data-code'); departInput.removeAttribute('data-lat'); departInput.removeAttribute('data-lon');
+       arrivalInput.removeAttribute('data-code'); arrivalInput.removeAttribute('data-lat'); arrivalInput.removeAttribute('data-lon');
        document.getElementById('date-group-oneway').style.display = 'block';
        document.getElementById('date-group-roundtrip').style.display = 'none';
 
@@ -311,70 +218,34 @@ async function handleFlightSubmit(e) {
 
 async function loadFlights() {
    if (!currentUser) return;
-
-   const q = query(
-       collection(db, 'flights'),
-       where('userId', '==', currentUser.uid),
-       where('isDeleted', '==', 'N'),
-       orderBy('date', 'desc')
-   );
-
+   const q = query(collection(db, 'flights'), where('userId', '==', currentUser.uid), where('isDeleted', '==', 'N'), orderBy('date', 'desc'));
    const querySnapshot = await getDocs(q);
    allFlights = [];
-   querySnapshot.forEach((doc) => {
-       allFlights.push({ id: doc.id, ...doc.data() });
-   });
+   querySnapshot.forEach((d) => { allFlights.push({ id: d.id, ...d.data() }); });
 }
 
-function displayFlights(filteredFlights = null) {
+function displayFlights(filteredFlights) {
    const flights = filteredFlights || allFlights;
    const tbody = document.querySelector('#flights-table tbody');
    tbody.innerHTML = '';
-
    flights.forEach(flight => {
        const row = document.createElement('tr');
        const dateObj = new Date(flight.date + 'T00:00:00');
        const formattedDate = `${(dateObj.getMonth() + 1).toString().padStart(2, '0')}/${dateObj.getDate().toString().padStart(2, '0')}/${dateObj.getFullYear().toString().slice(-2)}`;
-       
-       row.innerHTML = `
-           <td>${formattedDate}</td>
-           <td>${flight.departCode} → ${flight.arrivalCode}</td>
-           <td>${formatNumber(flight.distance)}</td>
-           <td>${formatNumber(flight.hours)}</td>
-           <td>${flight.type}</td>
-           <td>${flight.airline}</td>
-           <td>${flight.description}</td>
-           <td>
-               <button class="action-btn edit-btn" onclick="editFlight('${flight.id}')">Edit</button>
-               <button class="action-btn delete-btn" onclick="deleteFlight('${flight.id}')">Delete</button>
-           </td>
-       `;
+       row.innerHTML = `<td>${formattedDate}</td><td>${flight.departCode} → ${flight.arrivalCode}</td><td>${formatNumber(flight.distance)}</td><td>${formatNumber(flight.hours)}</td><td>${flight.type}</td><td>${flight.airline}</td><td>${flight.description}</td><td><button class="action-btn edit-btn" onclick="editFlight('${flight.id}')">Edit</button><button class="action-btn delete-btn" onclick="deleteFlight('${flight.id}')">Delete</button></td>`;
        tbody.appendChild(row);
    });
 }
 
 function setupSearch() {
-   const searchInput = document.getElementById('search-filter');
-   searchInput.addEventListener('input', (e) => {
+   document.getElementById('search-filter').addEventListener('input', (e) => {
        const term = e.target.value.toLowerCase();
-       
-       if (!term) {
-           displayFlights();
-           return;
-       }
-
+       if (!term) { displayFlights(); return; }
        const filtered = allFlights.filter(flight => {
            const dateObj = new Date(flight.date + 'T00:00:00');
            const formattedDate = `${(dateObj.getMonth() + 1).toString().padStart(2, '0')}/${dateObj.getDate().toString().padStart(2, '0')}/${dateObj.getFullYear().toString().slice(-2)}`;
-           
-           return formattedDate.includes(term) ||
-                  flight.departCode.toLowerCase().includes(term) ||
-                  flight.arrivalCode.toLowerCase().includes(term) ||
-                  flight.type.toLowerCase().includes(term) ||
-                  flight.airline.toLowerCase().includes(term) ||
-                  flight.description.toLowerCase().includes(term);
+           return formattedDate.includes(term) || flight.departCode.toLowerCase().includes(term) || flight.arrivalCode.toLowerCase().includes(term) || flight.type.toLowerCase().includes(term) || flight.airline.toLowerCase().includes(term) || flight.description.toLowerCase().includes(term);
        });
-
        displayFlights(filtered);
    });
 }
@@ -382,31 +253,23 @@ function setupSearch() {
 window.editFlight = function(flightId) {
    const flight = allFlights.find(f => f.id === flightId);
    if (!flight) return;
-
    document.getElementById('edit-id').value = flight.id;
    document.getElementById('edit-depart').value = flight.departCode;
    document.getElementById('edit-arrival').value = flight.arrivalCode;
    document.getElementById('edit-date').value = flight.date;
    document.getElementById('edit-airline').value = flight.airline;
    document.getElementById('edit-description').value = flight.description;
-
    document.querySelectorAll('[data-field="edit-type"]').forEach(btn => {
        btn.classList.remove('selected');
-       if (btn.dataset.value === flight.type) {
-           btn.classList.add('selected');
-       }
+       if (btn.dataset.value === flight.type) btn.classList.add('selected');
    });
-
    document.getElementById('edit-modal').classList.add('active');
 };
 
-window.closeEditModal = function() {
-   document.getElementById('edit-modal').classList.remove('active');
-};
+window.closeEditModal = function() { document.getElementById('edit-modal').classList.remove('active'); };
 
 async function handleEditSubmit(e) {
    e.preventDefault();
-
    const flightId = document.getElementById('edit-id').value;
    const type = document.querySelector('[data-field="edit-type"].selected')?.dataset.value;
    const departCode = document.getElementById('edit-depart').value.toUpperCase();
@@ -415,67 +278,37 @@ async function handleEditSubmit(e) {
    const airline = document.getElementById('edit-airline').value;
    const description = document.getElementById('edit-description').value;
 
-   if (!type) {
-       alert('Please select a type');
-       return;
-   }
-
+   if (!type) { alert('Please select a type'); return; }
    const departAirport = airportData.find(a => a.code === departCode);
    const arrivalAirport = airportData.find(a => a.code === arrivalCode);
+   if (!departAirport || !arrivalAirport) { alert('Invalid airport codes'); return; }
 
-   if (!departAirport || !arrivalAirport) {
-       alert('Invalid airport codes');
-       return;
-   }
-
-   const distance = haversineDistance(
-       departAirport.lat, departAirport.lon,
-       arrivalAirport.lat, arrivalAirport.lon
-   );
+   const distance = haversineDistance(departAirport.lat, departAirport.lon, arrivalAirport.lat, arrivalAirport.lon);
    const hours = calculateFlightTime(distance);
 
    try {
-       await updateDoc(doc(db, 'flights', flightId), {
-           type: type,
-           departCode: departCode,
-           arrivalCode: arrivalCode,
-           date: date,
-           airline: airline,
-           description: description,
-           distance: parseFloat(distance.toFixed(2)),
-           hours: parseFloat(hours.toFixed(2))
-       });
-
+       await updateDoc(doc(db, 'flights', flightId), { type, departCode, arrivalCode, date, airline, description, distance: parseFloat(distance.toFixed(2)), hours: parseFloat(hours.toFixed(2)) });
        closeEditModal();
        await loadFlights();
        displayFlights();
        updateAnalysis();
-   } catch (error) {
-       alert('Error updating flight: ' + error.message);
-   }
+   } catch (error) { alert('Error updating flight: ' + error.message); }
 }
 
 window.deleteFlight = async function(flightId) {
    if (!confirm('Are you sure you want to delete this flight?')) return;
-
    try {
-       await updateDoc(doc(db, 'flights', flightId), {
-           isDeleted: 'Y'
-       });
-
+       await updateDoc(doc(db, 'flights', flightId), { isDeleted: 'Y' });
        await loadFlights();
        displayFlights();
        updateAnalysis();
-   } catch (error) {
-       alert('Error deleting flight: ' + error.message);
-   }
+   } catch (error) { alert('Error deleting flight: ' + error.message); }
 };
 
 function updateAnalysis() {
    const totalFlights = allFlights.length;
    const totalMiles = allFlights.reduce((sum, f) => sum + f.distance, 0);
    const totalHours = allFlights.reduce((sum, f) => sum + f.hours, 0);
-   
    const routes = new Set(allFlights.map(f => `${f.departCode} → ${f.arrivalCode}`));
    
    document.getElementById('stat-flights').textContent = totalFlights.toLocaleString();
@@ -489,67 +322,77 @@ function updateAnalysis() {
    if (allFlights.length > 0) {
        const longest = allFlights.reduce((max, f) => f.distance > max.distance ? f : max);
        const shortest = allFlights.reduce((min, f) => f.distance < min.distance ? f : min);
-       
        const longestRoute = [longest.departCode, longest.arrivalCode].sort().join(' & ');
        const shortestRoute = [shortest.departCode, shortest.arrivalCode].sort().join(' & ');
-       
        document.getElementById('stat-longest').textContent = `${longestRoute} (${formatNumber(longest.distance)} mi & ${formatNumber(longest.hours)} hrs)`;
        document.getElementById('stat-shortest').textContent = `${shortestRoute} (${formatNumber(shortest.distance)} mi & ${formatNumber(shortest.hours)} hrs)`;
+
+       const airportCounts = {};
+       allFlights.forEach(flight => {
+           if (!airportCounts[flight.departCode]) airportCounts[flight.departCode] = { departures: 0, arrivals: 0 };
+           if (!airportCounts[flight.arrivalCode]) airportCounts[flight.arrivalCode] = { departures: 0, arrivals: 0 };
+           airportCounts[flight.departCode].departures++;
+           airportCounts[flight.arrivalCode].arrivals++;
+       });
+       const topAirport = Object.entries(airportCounts).sort((a, b) => (b[1].departures + b[1].arrivals) - (a[1].departures + a[1].arrivals))[0];
+       document.getElementById('stat-frequent-airport').textContent = `${topAirport[0]} (${topAirport[1].departures} Departures & ${topAirport[1].arrivals} Arrivals)`;
    }
 
    const yearlyData = {};
    allFlights.forEach(flight => {
        const year = new Date(flight.date + 'T00:00:00').getFullYear();
-       if (!yearlyData[year]) {
-           yearlyData[year] = { flights: 0, miles: 0, hours: 0 };
-       }
+       if (!yearlyData[year]) yearlyData[year] = { flights: 0, miles: 0, hours: 0 };
        yearlyData[year].flights++;
        yearlyData[year].miles += flight.distance;
        yearlyData[year].hours += flight.hours;
    });
-
    const yearlyTbody = document.querySelector('#yearly-table tbody');
    yearlyTbody.innerHTML = '';
    Object.keys(yearlyData).sort().reverse().forEach(year => {
-       const data = yearlyData[year];
-       yearlyTbody.innerHTML += `<tr><td>${year}</td><td>${data.flights.toLocaleString()}</td><td>${formatNumber(data.miles)}</td><td>${formatNumber(data.hours)}</td></tr>`;
+       const d = yearlyData[year];
+       yearlyTbody.innerHTML += `<tr><td>${year}</td><td>${d.flights.toLocaleString()}</td><td>${formatNumber(d.miles)}</td><td>${formatNumber(d.hours)}</td></tr>`;
+   });
+
+   const airlineData = {};
+   allFlights.forEach(flight => {
+       if (!airlineData[flight.airline]) airlineData[flight.airline] = { flights: 0, miles: 0, hours: 0 };
+       airlineData[flight.airline].flights++;
+       airlineData[flight.airline].miles += flight.distance;
+       airlineData[flight.airline].hours += flight.hours;
+   });
+   const airlineTbody = document.querySelector('#airline-table tbody');
+   airlineTbody.innerHTML = '';
+   Object.entries(airlineData).sort((a, b) => b[1].flights - a[1].flights).forEach(([airline, d]) => {
+       airlineTbody.innerHTML += `<tr><td>${airline}</td><td>${d.flights.toLocaleString()}</td><td>${formatNumber(d.miles)}</td><td>${formatNumber(d.hours)}</td></tr>`;
    });
 
    const typeData = {};
    allFlights.forEach(flight => {
-       if (!typeData[flight.type]) {
-           typeData[flight.type] = { flights: 0, miles: 0, hours: 0 };
-       }
+       if (!typeData[flight.type]) typeData[flight.type] = { flights: 0, miles: 0, hours: 0 };
        typeData[flight.type].flights++;
        typeData[flight.type].miles += flight.distance;
        typeData[flight.type].hours += flight.hours;
    });
-
    const typeTbody = document.querySelector('#type-table tbody');
    typeTbody.innerHTML = '';
    Object.keys(typeData).forEach(type => {
-       const data = typeData[type];
-       typeTbody.innerHTML += `<tr><td>${type}</td><td>${data.flights.toLocaleString()}</td><td>${formatNumber(data.miles)}</td><td>${formatNumber(data.hours)}</td></tr>`;
+       const d = typeData[type];
+       typeTbody.innerHTML += `<tr><td>${type}</td><td>${d.flights.toLocaleString()}</td><td>${formatNumber(d.miles)}</td><td>${formatNumber(d.hours)}</td></tr>`;
    });
 
    const routeData = {};
    allFlights.forEach(flight => {
        const route = `${flight.departCode} → ${flight.arrivalCode}`;
-       if (!routeData[route]) {
-           routeData[route] = { flights: 0, miles: 0, hours: 0 };
-       }
+       if (!routeData[route]) routeData[route] = { flights: 0, miles: 0, hours: 0 };
        routeData[route].flights++;
        routeData[route].miles += flight.distance;
        routeData[route].hours += flight.hours;
    });
-
    const routeTbody = document.querySelector('#route-table tbody');
    routeTbody.innerHTML = '';
-   Object.entries(routeData)
-       .sort((a, b) => b[1].flights - a[1].flights)
-       .forEach(([route, data]) => {
-           routeTbody.innerHTML += `<tr><td>${route}</td><td>${data.flights.toLocaleString()}</td><td>${formatNumber(data.miles)}</td><td>${formatNumber(data.hours)}</td></tr>`;
-       });
+   Object.entries(routeData).sort((a, b) => b[1].flights - a[1].flights).forEach(([route, d]) => {
+       routeTbody.innerHTML += `<tr><td>${route}</td><td>${d.flights.toLocaleString()}</td><td>${formatNumber(d.miles)}</td><td>${formatNumber(d.hours)}</td></tr>`;
+   });
 }
 
 async function handleAuth() {
@@ -577,29 +420,16 @@ async function init() {
    setupAutocomplete('depart-airport', 'depart-suggestions');
    setupAutocomplete('arrival-airport', 'arrival-suggestions');
    setupSearch();
-   
    document.getElementById('flight-form').addEventListener('submit', handleFlightSubmit);
    document.getElementById('edit-form').addEventListener('submit', handleEditSubmit);
-   
    document.getElementById('sign-in-btn').addEventListener('click', async () => {
-       const provider = new GoogleAuthProvider();
-       try {
-           await signInWithPopup(auth, provider);
-       } catch (error) {
-           console.error('Sign in error:', error);
-           alert('Error signing in: ' + error.message);
-       }
+       try { await signInWithPopup(auth, new GoogleAuthProvider()); }
+       catch (error) { console.error('Sign in error:', error); alert('Error signing in: ' + error.message); }
    });
-   
    document.getElementById('sign-out-btn').addEventListener('click', async () => {
-       try {
-           await signOut(auth);
-       } catch (error) {
-           console.error('Sign out error:', error);
-           alert('Error signing out: ' + error.message);
-       }
+       try { await signOut(auth); }
+       catch (error) { console.error('Sign out error:', error); alert('Error signing out: ' + error.message); }
    });
-   
    await handleAuth();
 }
 
