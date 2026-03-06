@@ -29,14 +29,16 @@ async function loadAirportData() {
    try {
        const response = await fetch(AIRPORTS_URL);
        const data = await response.json();
-       airportData = Object.entries(data).map(([code, info]) => ({
-           code: code,
-           name: info.name || '',
-           city: info.city || '',
-           country: info.country || '',
-           lat: parseFloat(info.lat) || 0,
-           lon: parseFloat(info.lon) || 0
-       })).filter(airport => airport.lat !== 0 && airport.lon !== 0);
+       airportData = Object.entries(data)
+           .filter(([code, info]) => info.iata && info.iata !== '')
+           .map(([code, info]) => ({
+               code: info.iata,
+               name: info.name || '',
+               city: info.city || '',
+               country: info.country || '',
+               lat: parseFloat(info.lat) || 0,
+               lon: parseFloat(info.lon) || 0
+           })).filter(airport => airport.lat !== 0 && airport.lon !== 0);
    } catch (error) {
        console.error('Error loading airport data:', error);
    }
@@ -496,13 +498,7 @@ function updateAnalysis() {
    yearlyTbody.innerHTML = '';
    Object.keys(yearlyData).sort().reverse().forEach(year => {
        const data = yearlyData[year];
-       const row = `<tr>
-           <td>${year}</td>
-           <td>${data.flights.toLocaleString()}</td>
-           <td>${formatNumber(data.miles)}</td>
-           <td>${formatNumber(data.hours)}</td>
-       </tr>`;
-       yearlyTbody.innerHTML += row;
+       yearlyTbody.innerHTML += `<tr><td>${year}</td><td>${data.flights.toLocaleString()}</td><td>${formatNumber(data.miles)}</td><td>${formatNumber(data.hours)}</td></tr>`;
    });
 
    const typeData = {};
@@ -519,13 +515,7 @@ function updateAnalysis() {
    typeTbody.innerHTML = '';
    Object.keys(typeData).forEach(type => {
        const data = typeData[type];
-       const row = `<tr>
-           <td>${type}</td>
-           <td>${data.flights.toLocaleString()}</td>
-           <td>${formatNumber(data.miles)}</td>
-           <td>${formatNumber(data.hours)}</td>
-       </tr>`;
-       typeTbody.innerHTML += row;
+       typeTbody.innerHTML += `<tr><td>${type}</td><td>${data.flights.toLocaleString()}</td><td>${formatNumber(data.miles)}</td><td>${formatNumber(data.hours)}</td></tr>`;
    });
 
    const routeData = {};
@@ -544,13 +534,7 @@ function updateAnalysis() {
    Object.entries(routeData)
        .sort((a, b) => b[1].flights - a[1].flights)
        .forEach(([route, data]) => {
-           const row = `<tr>
-               <td>${route}</td>
-               <td>${data.flights.toLocaleString()}</td>
-               <td>${formatNumber(data.miles)}</td>
-               <td>${formatNumber(data.hours)}</td>
-           </tr>`;
-           routeTbody.innerHTML += row;
+           routeTbody.innerHTML += `<tr><td>${route}</td><td>${data.flights.toLocaleString()}</td><td>${formatNumber(data.miles)}</td><td>${formatNumber(data.hours)}</td></tr>`;
        });
 }
 
