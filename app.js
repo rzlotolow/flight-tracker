@@ -111,7 +111,17 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
 }
 
 function calculateFlightTime(distance) {
-   return (distance / 500) + 0.5;
+   let speed;
+   if (distance < 500) {
+       speed = 350;
+   } else if (distance < 1500) {
+       speed = 450;
+   } else if (distance < 3000) {
+       speed = 500;
+   } else {
+       speed = 525;
+   }
+   return (distance / speed) + 0.5;
 }
 
 function setupTabs() {
@@ -479,8 +489,12 @@ function updateAnalysis() {
    if (allFlights.length > 0) {
        const longest = allFlights.reduce((max, f) => f.distance > max.distance ? f : max);
        const shortest = allFlights.reduce((min, f) => f.distance < min.distance ? f : min);
-       document.getElementById('stat-longest').textContent = `${longest.departCode} → ${longest.arrivalCode} (${formatNumber(longest.distance)} mi)`;
-       document.getElementById('stat-shortest').textContent = `${shortest.departCode} → ${shortest.arrivalCode} (${formatNumber(shortest.distance)} mi)`;
+       
+       const longestRoute = [longest.departCode, longest.arrivalCode].sort().join(' & ');
+       const shortestRoute = [shortest.departCode, shortest.arrivalCode].sort().join(' & ');
+       
+       document.getElementById('stat-longest').textContent = `${longestRoute} (${formatNumber(longest.distance)} mi & ${formatNumber(longest.hours)} hrs)`;
+       document.getElementById('stat-shortest').textContent = `${shortestRoute} (${formatNumber(shortest.distance)} mi & ${formatNumber(shortest.hours)} hrs)`;
    }
 
    const yearlyData = {};
