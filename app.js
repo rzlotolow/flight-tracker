@@ -4,7 +4,7 @@ import { getFirestore, collection, addDoc, query, where, getDocs, updateDoc, doc
 
 const firebaseConfig = {
    apiKey: "AIzaSyAhov2iADGzgg3yKkVyJLB2DpJCMFRLjU0",
-   authDomain: "flight-tracker-1ee6c.firebaseapp.com",
+   authDomain: "rzlotolow.github.io",
    projectId: "flight-tracker-1ee6c",
    storageBucket: "flight-tracker-1ee6c.firebasestorage.app",
    messagingSenderId: "411596757145",
