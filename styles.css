@@ -257,7 +257,6 @@ input[type="date"]:focus {
 }
 
 .stats-table td:last-child {
-   text-align: right;
    color: #333;
    font-weight: 600;
 }
