@@ -242,6 +242,7 @@ input[type="date"]:focus {
    padding: 12px;
    text-align: center;
    border: 1px solid #ddd;
+   color: #333;
 }
 
 .stats-table tr:hover,
@@ -257,7 +258,7 @@ input[type="date"]:focus {
 
 .stats-table td:last-child {
    text-align: right;
-   color: #007bff;
+   color: #333;
    font-weight: 600;
 }
 
