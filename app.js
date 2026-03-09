@@ -1,5 +1,5 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
-import { getAuth, signInWithPopup, signOut, GoogleAuthProvider, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, GoogleAuthProvider, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 import { getFirestore, collection, addDoc, query, where, getDocs, updateDoc, doc, orderBy } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -423,13 +423,18 @@ async function init() {
    document.getElementById('flight-form').addEventListener('submit', handleFlightSubmit);
    document.getElementById('edit-form').addEventListener('submit', handleEditSubmit);
    document.getElementById('sign-in-btn').addEventListener('click', async () => {
-       try { await signInWithPopup(auth, new GoogleAuthProvider()); }
-       catch (error) { console.error('Sign in error:', error); alert('Error signing in: ' + error.message); }
+       const provider = new GoogleAuthProvider();
+       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+       try {
+           if (isMobile) { await signInWithRedirect(auth, provider); }
+           else { await signInWithPopup(auth, provider); }
+       } catch (error) { console.error('Sign in error:', error); alert('Error signing in: ' + error.message); }
    });
    document.getElementById('sign-out-btn').addEventListener('click', async () => {
        try { await signOut(auth); }
        catch (error) { console.error('Sign out error:', error); alert('Error signing out: ' + error.message); }
    });
+   try { await getRedirectResult(auth); } catch (error) { console.error('Redirect error:', error); }
    await handleAuth();
 }
 
