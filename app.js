@@ -250,6 +250,7 @@ function setupSearch() {
    });
 }
 
+
 window.editFlight = function(flightId) {
    const flight = allFlights.find(f => f.id === flightId);
    if (!flight) return;
@@ -318,6 +319,10 @@ function updateAnalysis() {
    document.getElementById('stat-miles-per-flight').textContent = totalFlights > 0 ? formatNumber(totalMiles / totalFlights) : '0.00';
    document.getElementById('stat-hours-per-flight').textContent = totalFlights > 0 ? formatNumber(totalHours / totalFlights) : '0.00';
    document.getElementById('stat-earths').textContent = formatNumber(totalMiles / 24880);
+
+   const allAirports = new Set();
+   allFlights.forEach(f => { allAirports.add(f.departCode); allAirports.add(f.arrivalCode); });
+   document.getElementById('stat-airports-visited').textContent = allAirports.size.toLocaleString();
 
    if (allFlights.length > 0) {
        const longest = allFlights.reduce((max, f) => f.distance > max.distance ? f : max);
