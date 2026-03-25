@@ -414,8 +414,8 @@ function updateAnalysis() {
    });
    const routeTbody = document.querySelector('#route-table tbody');
    routeTbody.innerHTML = '';
-   Object.entries(routeData).sort((a, b) => b[1].flights - a[1].flights).forEach(([route, d]) => {
-       routeTbody.innerHTML += `<tr><td>${route}</td><td>${d.flights.toLocaleString()}</td><td>${formatNumber(d.miles)}</td><td>${formatNumber(d.hours)}</td></tr>`;
+   Object.entries(routeData).sort((a, b) => b[1].flights - a[1].flights || b[1].miles - a[1].miles || b[1].hours - a[1].hours).forEach(([route, d]) => {
+      routeTbody.innerHTML += `<tr><td>${route}</td><td>${d.flights.toLocaleString()}</td><td>${formatNumber(d.miles)}</td><td>${formatNumber(d.hours)}</td></tr>`;
    });
 }
 
